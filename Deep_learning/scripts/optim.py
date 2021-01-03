@@ -12,26 +12,44 @@
 """
 
 import numpy as np
+from .variable import  Variable
+
 
 class SGD(object):
-    def __init__(self, parameters, lr=0.01, momentum=0.9):
+    def __init__(self, parameters, lr=0.01, momentum=0.0,
+                 weight_decay=0.0, nesterov=False):
+        if lr < 0.0:
+            raise ValueError("Invalid learning rate: {}".format(lr))
+        if momentum < 0.0:
+            raise ValueError("Invalid momentum value: {}".format(momentum))
+        if weight_decay < 0.0:
+            raise ValueError("Invalid weight_decay value: {}".format(weight_decay))
         self.parameters = parameters
-        print(parameters)
         self.lr = lr
         self.momentum = momentum
+        self.weight_decay = weight_decay
         self.v = None
 
     def zero_grad(self):
-        for parameters in self.parameters:
-            parameters.weight_grad = 0
-            parameters.bias_grad = 0
+        for parameter in self.parameters:
+            print(parameter)
+            parameter.zero_grad()
 
     def step(self):
-        for parameters in self.parameters:
-            parameters.v_weight = parameters.v_weight * self.momentum + self.lr * parameters.weight_grad
-            parameters.weight -= self.lr * parameters.v_weight
-            parameters.v_bias = parameters.v_bias * self.momentum + self.lr * parameters.bias_grad
-            parameters.bias -= self.lr * parameters.bgrad
+        for parameter in self.parameters:
+            d_p = parameter.grad
+            if self.weight_decay != 0:
+                d_p += self.weight_decay * parameter.data
+            if self.momentum != 0:
+                if parameter.momentum_buffer is not None:
+                    d_p += self.momentum * parameter.momentum_buffer
+                parameter.momentum_buffer = d_p
+            d_p = -self.lr * d_p
+            parameter.add_(d_p)
+
+
+
+
 
 
 if __name__ == '__main__':

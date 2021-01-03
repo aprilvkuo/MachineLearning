@@ -12,32 +12,38 @@
 """
 
 import numpy as np
+from .variable import Variable
+from . import ops
 
-class FC(object):
+
+class Linear(object):
     def __init__(self, input_size, output_size):
-        np.random.seed(7)
         self.__x = None
         self.weight = np.random.rand(input_size, output_size)
         self.bias = np.random.rand(output_size)
-        self.weight_grad = np.zeros(self.weight.shape)
-        self.bias_grad = np.zeros(self.bias.shape)
+        self.weight = Variable(self.weight)
+        self.bias = Variable(self.bias)
 
-    def forward(self, x):
+    def __call__(self, x: Variable)->Variable:
         self.__x = x
-        out = np.dot(x, self.weight) + self.bias
+        # print(x, self.weight)
+        out = ops.mm(x, self.weight) + self.bias
         return out
 
-    def backward(self, grad):
-        delta_x = np.dot(self.weight, grad)
-        delta_weight = np.dot(self.__x, grad)
+    # def __call__(self, *args, **kwargs):
+    #     return self.forward(args)
+
+    def backward(self, grad: np.array)->np.array:
+        delta_x = np.dot(self.weight.data, grad)
+        delta_weight = np.dot(self.__x.data, grad)
         delta_bias = grad
-        self.weight_grad = delta_weight
-        self.bias_grad = delta_bias
+        self.weight.grad = delta_weight
+        self.bias.grad = delta_bias
         return delta_x
 
     def parameters(self):
-        return self
+        return [self.weight, self.bias]
 
 
-if __name__ == '__main__':
-    pass
+# if __name__ == '__main__':
+#     pass
